@@ -61,7 +61,7 @@ def checkAPI():
         # Parse JSON Object.
         object = json.loads(data)
 
-        oldTotalCases = 7
+        oldTotalCases = str(object['cases'])
 
         while True:
             # Download JSON & Decode.
