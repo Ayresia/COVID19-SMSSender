@@ -2,88 +2,97 @@
 # Developer: Ayresia
 # Date: 21th March 2020
 
-import json, urllib.request, time, configparser, os
+import requests, time, configparser, os, sys
+
+from urllib import request
 from twilio.rest import Client
 from datetime import datetime
+from pathlib import Path
 
 config = configparser.ConfigParser()
+configuration_file = Path('config.ini')
 
-def sendSMS(bodyText):
-    account_sid = getConfig("TWILIO", "AccountSID")
-    auth_token = getConfig("TWILIO", "AuthKey")
-
-    try:
-        client = Client(account_sid, auth_token)
-    except:
-        print("Configuration > Your AccountSID or AuthToken is invalid/incorrect.")
-
-    phoneNumbers = getConfig("API", "PhoneNumbers")
-    phoneNumbers = phoneNumbers.split(',')
-    phoneNumbers = [x.strip(' ') for x in phoneNumbers]
-
-    twilioNumber = getConfig("TWILIO", "TwilioNumber")
-
-    for numbers in phoneNumbers:
-        print('Sending Message to: ' + numbers)
-        message = client.messages.create(
-            body = bodyText,
-            from_ = twilioNumber,
-            to = numbers)
-        print("Status: " + message.status)
-
-def checkConfig():
-
-    if not os.path.exists('config.ini'):
-        config['TWILIO'] = {'AccountSID': 'null','AuthKey': 'null', 'TwilioNumber': 'null'}
-        config['API'] = {'Country': 'null', 'PhoneNumbers': 'null'}
-        config.write(open('config.ini', 'w'))
-    else:
-        if getConfig("TWILIO", "AccountSID") == "null" or getConfig("TWILIO", "AuthKey") == "null" or getConfig("TWILIO", "TwilioNumber") == "null":
-            print("Configuration > You have something wrong in the TWILIO Section.")
-            os._exit(1)
-        if getConfig("API", "Country") == "null" or getConfig("API", "PhoneNumbers") == "null":
-            print("Configuration > You have something wrong in the API Section.")
-            os._exit(1)
-
-def getConfig(section, key):
+def get_config(section, key):
     config.read('config.ini')
     return config[section][key]
 
-def checkAPI():
+url_api = "https://coronavirus-19-api.herokuapp.com/countries/" + get_config('API', 'Country')
 
-    # Download JSON & Decode.
-    urlAPI = "https://coronavirus-19-api.herokuapp.com/countries/" + getConfig('API', 'Country')
-    data = urllib.request.urlopen(urlAPI).read().decode()
-    if data == "Country not found":
-        print("Configuration > That country does not exist.")
-        os._exit(1)
+def check_config():
+    data = requests.get(url_api).text
+
+    account_sid = get_config("TWILIO", "AccountSID")
+    auth_token = get_config("TWILIO", "AuthKey")
+
+    client = Client(account_sid, auth_token)
+    client.available_phone_numbers.get(0)
+    
+    if not Path('config.ini').is_file():
+        config['TWILIO'] = {'AccountSID': 'null', 'AuthKey': 'null', 'TwilioNumber': 'null'}
+        config['API'] = {'Country': 'null', 'PhoneNumbers': 'null'}
+
+        config.write(configuration_file.open('w'))
     else:
-        # Parse JSON Object.
-        object = json.loads(data)
+        if any(get_config("TWILIO", i) == "null" for i in ("AccountSID", "AuthKey", "TwilioNumber")):
+            print("Configuration > You have something wrong in the TWILIO Section.")
+            sys.exit(1)
+        elif any(get_config("API", i) == "null" for i in ("PhoneNumbers", "Country")):
+            print("Configuration > You have something wrong in the API Section.")
+            sys.exit(1)
+        elif data == "Country not found":
+            print('Configuration > The country is invalid/incorrect.')
+            sys.exit(1)
 
-        oldTotalCases = str(object['cases'])
+def send_sms(body_text):
+    account_sid = get_config("TWILIO", "AccountSID")
+    auth_token = get_config("TWILIO", "AuthKey")
 
-        while True:
-            # Download JSON & Decode.
-            urlAPI1 = "https://coronavirus-19-api.herokuapp.com/countries/" + getConfig('API', 'Country')
-            data1 = urllib.request.urlopen(urlAPI1).read().decode()
-            object1 = json.loads(data1)
+    client = Client(account_sid, auth_token)
 
-            newTotalCases = str(object1['cases'])
+    phone_numbers = get_config("API", "PhoneNumbers")
+    phone_numbers = phone_numbers.split(',')
+    phone_numbers = [p_num.strip(' ') for p_num in phone_numbers]
 
-            if newTotalCases == oldTotalCases:
-                print('Checking > No Added Cases in ' + getConfig('API', 'Country'))
-                time.sleep(15)
-            else:
-                print('Checking > There are new Cases in ' + getConfig('API', 'Country') + "!")
+    twilio_number = get_config("TWILIO", "TwilioNumber")
 
-                oldTotalCases = newTotalCases
+    for numbers in phone_numbers:
+        print('Sending Message to: ' + numbers)
 
-                todayCases = str(object['todayCases'])
-                activeCases = str(object['active'])
-                totalDeaths = str(object['deaths'])
-                totalRecovered = str(object['recovered'])
-                totalCritical = str(object['critical'])
-                todayDate = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-                sendSMS('\nCOVID-19 Update:\n\nTotal Cases: ' + newTotalCases + '\nNew Cases: ' + todayCases + '\nActive Cases: ' + activeCases + '\nTotal Deaths: ' + totalDeaths + '\nTotal Recovered: ' + totalRecovered + '\nTotal Critical: ' + totalCritical + "\n\nDate & Time: " + todayDate)
-                break
+        message = client.messages.create(
+            body = body_text,
+            from_ = twilio_number,
+            to = numbers
+        )
+
+        print("Status: " + message.status)
+
+def check_api():
+
+    # Get URL as a JSON
+    data = requests.get(url_api).json()
+
+    old_total_cases = data['cases']
+
+    while True:
+        # Get URL as a JSON
+        looped_data = requests.get(url_api).json()
+
+        new_total_cases = looped_data['cases']
+
+        if new_total_cases == old_total_cases:
+            print('Checking > No Added Cases in ' + get_config('API', 'Country'))
+            time.sleep(15)
+        else:
+            print('Checking > There are new Cases in ' + get_config('API', 'Country') + "!")
+
+            old_total_cases = new_total_cases
+
+            today_cases = looped_data['todayCases']
+            active_cases = looped_data['active']
+            total_deaths = looped_data['deaths']
+            total_recovered = looped_data['recovered']
+            total_critical = looped_data['critical']
+            today_date = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+
+            send_sms(f'\nCOVID-19 Update:\n\nTotal Cases: {new_total_cases} \nNew Cases: {today_cases} \nActive Cases: {active_cases}\nTotal Deaths: {total_deaths}\nTotal Recovered: {total_recovered}\nTotal Critical: {total_critical}\n\nDate & Time: {today_date}\n\nThese stats are not 100% accurate, but close enough.')
+            break
