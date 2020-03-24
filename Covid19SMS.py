@@ -20,29 +20,21 @@ def get_config(section, key):
     config.read('config.ini')
     return config[section][key]
 
-url_api = "https://coronavirus-19-api.herokuapp.com/countries/" + get_config('API', 'Country')
-
 def check_config():
-    data = requests.get(url_api).text
 
-    account_sid = get_config("TWILIO", "AccountSID")
-    auth_token = get_config("TWILIO", "AuthKey")
-    
-    client = Client(account_sid, auth_token)
-    
-    if not Path('config.ini').exists():
+    if not Path(configuration_file).exists():
         config['TWILIO'] = {'AccountSID': 'null', 'AuthKey': 'null', 'TwilioNumber': 'null'}
         config['API'] = {'Country': 'null', 'PhoneNumbers': 'null'}
 
         with open('config.ini', 'w') as file:
             config.write(file)
+            print("Configuration > I have just created a config.ini, please edit it.")
+        sys.exit(1)
     else:
         if any(get_config("TWILIO", i) == "null" for i in ("AccountSID", "AuthKey", "TwilioNumber")):
             print("Configuration > You have something wrong in the TWILIO Section.")
         elif any(get_config("API", i) == "null" for i in ("PhoneNumbers", "Country")):
             print("Configuration > You have something wrong in the API Section.")
-        elif data == "Country not found":
-            print('Configuration > The country is invalid/incorrect.')
         sys.exit(1)
 
 def send_sms(body_text):
@@ -71,7 +63,14 @@ def send_sms(body_text):
 def check_api():
 
     # Get URL as a JSON
+    url_api = "https://coronavirus-19-api.herokuapp.com/countries/" + get_config('API', 'Country')
     data = requests.get(url_api).json()
+    
+    checkData = requests.get(url_api).text()
+
+    if checkData == "Country not found":
+        print('Configuration > The country is invalid/incorrect.')
+        sys.exit(1)
 
     old_total_cases = data['cases']
 
