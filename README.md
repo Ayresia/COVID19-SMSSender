@@ -32,7 +32,7 @@ You can find the **AccountSID**, **AuthKey** and the **Twilio Number** at [Here]
 
 **Country** - The API I use which is [API Link](https://coronavirus-19-api.herokuapp.com/countries/) has total of **196 countries**, if you have any issue you can always go in the [API Link](https://coronavirus-19-api.herokuapp.com/countries/) and check because the **Country Name** might be instead the **Country Code** like **United States** & **United Kingdom** in the API is actually **US** & **UK**.
 
-**PhoneNumbers** - has to be formatted this way below vv
+**PhoneNumbers** - has to be formatted this way below ↓↓
 ```
 +12025550108,+12025550128,+441632960285,+441632960058
 ```
