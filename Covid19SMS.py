@@ -1,8 +1,12 @@
 # Project: COVID19-SMSSender
 # Developer: Ayresia
-# Date: 21th March 2020
+# Date: 24th March 2020
 
-import requests, time, configparser, os, sys
+import requests
+import time
+import configparser
+import os
+import sys
 
 from urllib import request
 from twilio.rest import Client
@@ -23,24 +27,23 @@ def check_config():
 
     account_sid = get_config("TWILIO", "AccountSID")
     auth_token = get_config("TWILIO", "AuthKey")
-
+    
     client = Client(account_sid, auth_token)
     
-    if not Path('config.ini').is_file():
+    if not Path('config.ini').exists():
         config['TWILIO'] = {'AccountSID': 'null', 'AuthKey': 'null', 'TwilioNumber': 'null'}
         config['API'] = {'Country': 'null', 'PhoneNumbers': 'null'}
 
-        config.write(configuration_file.open('w'))
+        with open('config.ini', 'w') as file:
+            config.write(file)
     else:
         if any(get_config("TWILIO", i) == "null" for i in ("AccountSID", "AuthKey", "TwilioNumber")):
             print("Configuration > You have something wrong in the TWILIO Section.")
-            sys.exit(1)
         elif any(get_config("API", i) == "null" for i in ("PhoneNumbers", "Country")):
             print("Configuration > You have something wrong in the API Section.")
-            sys.exit(1)
         elif data == "Country not found":
             print('Configuration > The country is invalid/incorrect.')
-            sys.exit(1)
+        sys.exit(1)
 
 def send_sms(body_text):
     account_sid = get_config("TWILIO", "AccountSID")
@@ -86,12 +89,17 @@ def check_api():
 
             old_total_cases = new_total_cases
 
-            today_cases = looped_data['todayCases']
-            active_cases = looped_data['active']
-            total_deaths = looped_data['deaths']
-            total_recovered = looped_data['recovered']
-            total_critical = looped_data['critical']
-            today_date = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-
-            send_sms(f'\nCOVID-19 Update:\n\nTotal Cases: {new_total_cases} \nNew Cases: {today_cases} \nActive Cases: {active_cases}\nTotal Deaths: {total_deaths}\nTotal Recovered: {total_recovered}\nTotal Critical: {total_critical}\n\nDate & Time: {today_date}\n\nThese stats are not 100% accurate, but close enough.')
+            send_sms(f'''
+COVID-19 Update:
+            
+Total Cases: {new_total_cases} 
+New Cases: {looped_data["todayCases"]} 
+Active Cases: {looped_data["active"]}
+            
+Total Deaths: {looped_data["deaths"]}
+Total Recovered: {looped_data["recovered"]}
+Total Critical: {looped_data["critical"]}
+            
+Date & Time: {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}
+These stats are not 100% accurate, but close enough.''')
             break
