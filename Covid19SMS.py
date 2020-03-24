@@ -25,7 +25,6 @@ def check_config():
     auth_token = get_config("TWILIO", "AuthKey")
 
     client = Client(account_sid, auth_token)
-    client.available_phone_numbers.get(0)
     
     if not Path('config.ini').is_file():
         config['TWILIO'] = {'AccountSID': 'null', 'AuthKey': 'null', 'TwilioNumber': 'null'}
