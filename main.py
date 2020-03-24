@@ -1,4 +1,4 @@
 import Covid19SMS
 
-Covid19SMS.checkConfig()
-Covid19SMS.checkAPI()
+Covid19SMS.check_config()
+Covid19SMS.check_api()
