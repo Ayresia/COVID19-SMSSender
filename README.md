@@ -1,4 +1,4 @@
-# COVID19-SMSSender
+# COVID19-SMSSender [![CodeFactor](https://www.codefactor.io/repository/github/ayresia/covid19-smssender/badge)](https://www.codefactor.io/repository/github/ayresia/covid19-smssender)
 Allows you to receive a text-message in real-time whenever there is more Total Cases in that selected Country.
 
 # Screenshots
