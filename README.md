@@ -36,4 +36,4 @@ You can find the **AccountSID**, **AuthKey** and the **Twilio Number** at [Here]
 ```
 +12025550108,+12025550128,+441632960285,+441632960058
 ```
-It must include the **Dialing Code** for example **UK:** **+44** & **US: **+1** and also the other numbers. After you must put a comma (If you want to add more phone numbers).
+It must include the **Dialing Code** for example **UK:** **+44** & **US**: **+1** and also the other numbers. After you must put a comma (If you want to add more phone numbers).
